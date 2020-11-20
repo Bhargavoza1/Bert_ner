@@ -10,6 +10,12 @@ from transformers import BertTokenizer
 import joblib
 import torch
 
+'''loading  bert-base-uncased Tokenizer'''
+TOKENIZER =  BertTokenizer.from_pretrained(
+    "bert-base-uncased",
+    do_lower_case=True
+)
+
 '''  
 _pos_encoder = preprocessing.LabelEncoder()
 _tag_encoder = preprocessing.LabelEncoder()
@@ -52,15 +58,15 @@ asd.fit_transform(["paris", "paris", "tokyo", "amsterdam"]
 
 
 def process_data():
-    _pos_encoder = preprocessing.LabelEncoder()
-    _tag_encoder = preprocessing.LabelEncoder()
+    pos_encoder = preprocessing.LabelEncoder()
+    tag_encoder = preprocessing.LabelEncoder()
 
     '''# it will encode string to number 
         i.e. _pos_encoder.fit_transform(["paris", "paris", "tokyo", "amsterdam"])
         array([1, 1, 2, 0])
     '''
-    fd.data_set.loc[:, "POS"] = _pos_encoder.fit_transform(fd.data_set["POS"])
-    fd.data_set.loc[:, "Tag"] = _tag_encoder.fit_transform(fd.data_set["Tag"])
+    fd.data_set.loc[:, "POS"] = pos_encoder.fit_transform(fd.data_set["POS"])
+    fd.data_set.loc[:, "Tag"] = tag_encoder.fit_transform(fd.data_set["Tag"])
 
     '''# groupby returns a Series with the data type of each column
     
@@ -75,32 +81,54 @@ def process_data():
     sentences = fd.data_set.groupby("Sentence #")["Word"].apply(list).values
     pos = fd.data_set.groupby("Sentence #")["POS"].apply(list).values
     tag = fd.data_set.groupby("Sentence #")["Tag"].apply(list).values
-    return sentences,pos,tag
+    return sentences,pos,tag, pos_encoder, tag_encoder
 
-sentences, pos, tag = process_data()
+sentences, pos, tag, pos_encoder, tag_encoder = process_data()
 
+
+num_pos = len(list(pos_encoder.classes_))
+num_tag = len(list(tag_encoder.classes_))
+
+''' we saving pos_encoder and tag_encoder tokens for further use in prediction'''
+meta_data = {
+    "enc_pos": pos_encoder,
+    "enc_tag": tag_encoder
+}
+joblib.dump(meta_data, "meta.bin")
+
+
+'''splitting train test  '''
 (train_sentences,test_sentences,
   train_pos,test_pos,
   train_tag,test_tag)  = model_selection.train_test_split(sentences, pos, tag, random_state=42, test_size=0.1)
 
-sentences.shape
-TOKENIZER =  BertTokenizer.from_pretrained(
-    "bert-base-uncased",
-    do_lower_case=True
-)
+
+
+
+
 
 class EntityDataset:
-        def __init__(self ,texts, pos, tags ):
-            self.texts = texts
+        def __init__(self ,sentences, pos, tags ):
+            self.sentences = sentences
             self.pos = pos
             self.tags = tags
 
         def __len__(self):
-            return len(self.texts)
+            return len(self.sentences)
 
         def __getitem__(self, item):
 
-            text = self.texts[item]
+            '''
+                why we have to use this __getitem__ method ?
+                coz of torch.utils.data.DataLoader. it will iterate the data of __init__ method within batch size
+            '''
+
+            '''
+                and this method will do all king od preprocess stuff 
+                i.e. tokenization , masking ,setup sentences length 
+            '''
+
+            sentences = self.sentences[item]
             pos = self.pos[item]
             tags = self.tags[item]
 
@@ -108,12 +136,11 @@ class EntityDataset:
             target_pos = []
             target_tag = []
 
-            for i, s in enumerate(text):
+            for i, s in enumerate(sentences):
                 inputs = TOKENIZER.encode(
                     s,
                     add_special_tokens=False
                 )
-                # abhishek: ab ##hi ##sh ##ek
                 input_len = len(inputs)
                 ids.extend(inputs)
                 target_pos.extend([pos[i]] * input_len)
@@ -139,50 +166,42 @@ class EntityDataset:
             target_tag = target_tag + ([0] * padding_len)
 
             return {
-                "input_ids": torch.tensor(ids, dtype=torch.long),
-                "attention_mask": torch.tensor(mask, dtype=torch.long),
+                "ids": torch.tensor(ids, dtype=torch.long),
+                "mask": torch.tensor(mask, dtype=torch.long),
                 "token_type_ids": torch.tensor(token_type_ids, dtype=torch.long),
-
+                "target_pos": torch.tensor(target_pos, dtype=torch.long),
+                "target_tag": torch.tensor(target_tag, dtype=torch.long),
             }
 
 
+
+
+
+
+
+
+
+
+
+#  using fot debug
+
+'''
 device = torch.device("cuda")
-
-
-a =EntityDataset(texts=train_sentences, pos=train_pos, tags=train_tag)
+ 
+a =EntityDataset(sentences=train_sentences, pos=train_pos, tags=train_tag)
 
 valid_data_loader = torch.utils.data.DataLoader(
     a, batch_size=8, num_workers=0
 )
-
-a.__len__()
-
-
+ 
 from tqdm import tqdm
-
-
-
-
-from transformers import    BertForPreTraining,BertTokenizer
-model = BertForPreTraining.from_pretrained('bert-base-uncased', return_dict=True)
+ 
+import model
+model = model.EntityModel(num_tag=num_tag, num_pos=num_pos)
 model.to(device)
 len(valid_data_loader)
 for data in tqdm(valid_data_loader, total=len(valid_data_loader)):
     for k, v in data.items():
         data[k] = v.to(device)
-    _, loss = model(**data)
-
-
-
-
-
-
-
-
-model = BertForPreTraining.from_pretrained('bert-base-uncased', return_dict=True)
-tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-inputs = tokenizer("Hello, my dog is cute", return_tensors="pt")
-outputs = model(**inputs)
-
-prediction_logits = outputs.prediction_logits
-seq_relationship_logits = outputs.seq_relationship_logits
+    _,_, loss = model(**data)
+'''
