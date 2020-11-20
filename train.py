@@ -49,11 +49,11 @@ if __name__ == "__main__":
     valid_dataset = p_data.EntityDataset(sentences=p_data.test_sentences, pos=p_data.test_pos, tags=p_data.test_tag)
 
     train_data_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=batch_size, num_workers=0
+        train_dataset, batch_size=batch_size, num_workers=2
     )
 
     valid_data_loader = torch.utils.data.DataLoader(
-        valid_dataset, batch_size=batch_size, num_workers=0
+        valid_dataset, batch_size=batch_size, num_workers=2
     )
 
     device = torch.device("cuda")

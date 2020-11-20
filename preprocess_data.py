@@ -6,15 +6,11 @@ import fetch_data as fd
 from sklearn import preprocessing
 from sklearn import model_selection
 
-from transformers import BertTokenizer
+
 import joblib
 import torch
 
-'''loading  bert-base-uncased Tokenizer'''
-TOKENIZER = BertTokenizer.from_pretrained(
-    "bert-base-uncased",
-    do_lower_case=True
-)
+
 
 '''  
 _pos_encoder = preprocessing.LabelEncoder()
@@ -130,7 +126,7 @@ class EntityDataset:
         target_tag = []
 
         for i, s in enumerate(sentences):
-            inputs = TOKENIZER.encode(
+            inputs = fd.TOKENIZER.encode(
                 s,
                 add_special_tokens=False
             )
