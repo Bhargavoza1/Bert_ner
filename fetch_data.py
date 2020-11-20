@@ -5,7 +5,7 @@ data_dir = "./ner_dataset.csv"
 data_set = pd.read_csv(data_dir ,encoding = "ISO-8859-1")
 
 
-
+MODEL_PATH = "model.bin"
 
 data_set.isnull().sum()
 data_set = data_set.fillna(method='ffill')

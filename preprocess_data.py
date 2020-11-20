@@ -11,7 +11,7 @@ import joblib
 import torch
 
 '''loading  bert-base-uncased Tokenizer'''
-TOKENIZER =  BertTokenizer.from_pretrained(
+TOKENIZER = BertTokenizer.from_pretrained(
     "bert-base-uncased",
     do_lower_case=True
 )
@@ -56,7 +56,6 @@ asd.fit_transform(["paris", "paris", "tokyo", "amsterdam"]
 '''
 
 
-
 def process_data():
     pos_encoder = preprocessing.LabelEncoder()
     tag_encoder = preprocessing.LabelEncoder()
@@ -81,10 +80,10 @@ def process_data():
     sentences = fd.data_set.groupby("Sentence #")["Word"].apply(list).values
     pos = fd.data_set.groupby("Sentence #")["POS"].apply(list).values
     tag = fd.data_set.groupby("Sentence #")["Tag"].apply(list).values
-    return sentences,pos,tag, pos_encoder, tag_encoder
+    return sentences, pos, tag, pos_encoder, tag_encoder
+
 
 sentences, pos, tag, pos_encoder, tag_encoder = process_data()
-
 
 num_pos = len(list(pos_encoder.classes_))
 num_tag = len(list(tag_encoder.classes_))
@@ -96,87 +95,76 @@ meta_data = {
 }
 joblib.dump(meta_data, "meta.bin")
 
-
 '''splitting train test  '''
-(train_sentences,test_sentences,
-  train_pos,test_pos,
-  train_tag,test_tag)  = model_selection.train_test_split(sentences, pos, tag, random_state=42, test_size=0.1)
-
-
-
-
+(train_sentences, test_sentences,
+ train_pos, test_pos,
+ train_tag, test_tag) = model_selection.train_test_split(sentences, pos, tag, random_state=42, test_size=0.1)
 
 
 class EntityDataset:
-        def __init__(self ,sentences, pos, tags ):
-            self.sentences = sentences
-            self.pos = pos
-            self.tags = tags
+    def __init__(self, sentences, pos, tags):
+        self.sentences = sentences
+        self.pos = pos
+        self.tags = tags
 
-        def __len__(self):
-            return len(self.sentences)
+    def __len__(self):
+        return len(self.sentences)
 
-        def __getitem__(self, item):
-
-            '''
+    def __getitem__(self, item):
+        '''
                 why we have to use this __getitem__ method ?
                 coz of torch.utils.data.DataLoader. it will iterate the data of __init__ method within batch size
             '''
 
-            '''
+        '''
                 and this method will do all king od preprocess stuff 
                 i.e. tokenization , masking ,setup sentences length 
             '''
 
-            sentences = self.sentences[item]
-            pos = self.pos[item]
-            tags = self.tags[item]
+        sentences = self.sentences[item]
+        pos = self.pos[item]
+        tags = self.tags[item]
 
-            ids = []
-            target_pos = []
-            target_tag = []
+        ids = []
+        target_pos = []
+        target_tag = []
 
-            for i, s in enumerate(sentences):
-                inputs = TOKENIZER.encode(
-                    s,
-                    add_special_tokens=False
-                )
-                input_len = len(inputs)
-                ids.extend(inputs)
-                target_pos.extend([pos[i]] * input_len)
-                target_tag.extend([tags[i]] * input_len)
+        for i, s in enumerate(sentences):
+            inputs = TOKENIZER.encode(
+                s,
+                add_special_tokens=False
+            )
+            input_len = len(inputs)
+            ids.extend(inputs)
+            target_pos.extend([pos[i]] * input_len)
+            target_tag.extend([tags[i]] * input_len)
 
-            ids = ids[:128 - 2]
-            target_pos = target_pos[:128 - 2]
-            target_tag = target_tag[:128 - 2]
+        ids = ids[:128 - 2]
+        target_pos = target_pos[:128 - 2]
+        target_tag = target_tag[:128 - 2]
 
-            ids = [101] + ids + [102]
-            target_pos = [0] + target_pos + [0]
-            target_tag = [0] + target_tag + [0]
+        ids = [101] + ids + [102]
+        target_pos = [0] + target_pos + [0]
+        target_tag = [0] + target_tag + [0]
 
-            mask = [1] * len(ids)
-            token_type_ids = [0] * len(ids)
+        mask = [1] * len(ids)
+        token_type_ids = [0] * len(ids)
 
-            padding_len = 128 - len(ids)
+        padding_len = 128 - len(ids)
 
-            ids = ids + ([0] * padding_len)
-            mask = mask + ([0] * padding_len)
-            token_type_ids = token_type_ids + ([0] * padding_len)
-            target_pos = target_pos + ([0] * padding_len)
-            target_tag = target_tag + ([0] * padding_len)
+        ids = ids + ([0] * padding_len)
+        mask = mask + ([0] * padding_len)
+        token_type_ids = token_type_ids + ([0] * padding_len)
+        target_pos = target_pos + ([0] * padding_len)
+        target_tag = target_tag + ([0] * padding_len)
 
-            return {
-                "ids": torch.tensor(ids, dtype=torch.long),
-                "mask": torch.tensor(mask, dtype=torch.long),
-                "token_type_ids": torch.tensor(token_type_ids, dtype=torch.long),
-                "target_pos": torch.tensor(target_pos, dtype=torch.long),
-                "target_tag": torch.tensor(target_tag, dtype=torch.long),
-            }
-
-
-
-
-
+        return {
+            "ids": torch.tensor(ids, dtype=torch.long),
+            "mask": torch.tensor(mask, dtype=torch.long),
+            "token_type_ids": torch.tensor(token_type_ids, dtype=torch.long),
+            "target_pos": torch.tensor(target_pos, dtype=torch.long),
+            "target_tag": torch.tensor(target_tag, dtype=torch.long),
+        }
 
 
 

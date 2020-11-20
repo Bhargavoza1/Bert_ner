@@ -29,9 +29,9 @@ def loss_fn(output, target, mask, num_labels):
     return loss
 
 
-class EntityModel(nn.Module):
+class CustomModel(nn.Module):
     def __init__(self, num_tag, num_pos):
-        super(EntityModel, self).__init__()
+        super(CustomModel, self).__init__()
         self.num_tag = num_tag   #17
         self.num_pos = num_pos   #42
         self.bert = BertModel.from_pretrained('bert-base-uncased')
@@ -45,17 +45,19 @@ class EntityModel(nn.Module):
         # 8     ,      128         ,   x
         # batch , sentence length  , sth output
 
+        '''how we get o1 shape of 8,126,768? aaaaa it's really big process of BERT'''
         o1, _ = self.bert(ids, attention_mask=mask, token_type_ids=token_type_ids) # output 8, 128, 768
-        '''how we get o1 shape of 8,126,768? aaaaa it's real big process of BERT'''
+
 
         bo_tag = self.bert_drop_1(o1 ) # output 8, 128, 768
         bo_pos = self.bert_drop_2(o1 ) # output 8, 128, 768
 
-
+        '''how we get tag shape of 8,126,17? by doing dot product of shape of '8, 128, 768' x '768, 17' '''
         tag = self.out_tag(bo_tag) #output 8, 128, 17
-        '''how we get tag shape of 8,126,17? by doind dot product of shape of '8, 128, 768' x '768, 17' '''
+
+        '''how we get pos shape of 8,126,42? by doing dot product of shape of '8, 128, 768' x '768, 42' '''
         pos = self.out_pos(bo_pos) #output 8, 128, 42
-        '''how we get tag shape of 8,126,17? by doind dot product of shape of '8, 128, 768' x '768, 42' '''
+
 
         loss_tag = loss_fn(tag, target_tag, mask, self.num_tag)
         loss_pos = loss_fn(pos, target_pos, mask, self.num_pos)
