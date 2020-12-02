@@ -91,11 +91,14 @@ meta_data = {
 }
 joblib.dump(meta_data, "meta.bin")
 
+#/////////////////////////////////////////////////////////////////////////////////
+
 '''splitting train test  '''
 (train_sentences, test_sentences,
  train_pos, test_pos,
  train_tag, test_tag) = model_selection.train_test_split(sentences, pos, tag, random_state=42, test_size=0.1)
 
+#/////////////////////////////////////////////////////////////////////////////////
 
 class EntityDataset:
     def __init__(self, sentences, pos, tags):
@@ -113,7 +116,7 @@ class EntityDataset:
             '''
 
         '''
-                and this method will do all king od preprocess stuff 
+                and this method will do all king of preprocess stuff 
                 i.e. tokenization , masking ,setup sentences length 
             '''
 

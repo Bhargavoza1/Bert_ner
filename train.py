@@ -19,6 +19,9 @@ batch_size = 8
 epochs = 10
 
 def train_fn(data_loader, model, optimizer, device, scheduler):
+    '''train function. in this function we will do backpropagation.
+       i.e.  backpropagation(derivation from output to input) will adjust weight and bias to minimize the error in our learning stage
+    '''
     model.train()
     final_loss = 0
     for data in tqdm(data_loader, total=len(data_loader)):
@@ -34,6 +37,7 @@ def train_fn(data_loader, model, optimizer, device, scheduler):
 
 
 def eval_fn(data_loader, model, device):
+    '''eval function. in this function we dont need to do backpropagation. '''
     model.eval()
     final_loss = 0
     for data in tqdm(data_loader, total=len(data_loader)):
@@ -45,6 +49,7 @@ def eval_fn(data_loader, model, device):
 
 
 if __name__ == "__main__":
+    '''preprocessing the data'''
     train_dataset = p_data.EntityDataset(sentences=p_data.train_sentences, pos=p_data.train_pos, tags=p_data.train_tag)
     valid_dataset = p_data.EntityDataset(sentences=p_data.test_sentences, pos=p_data.test_pos, tags=p_data.test_tag)
 
@@ -56,14 +61,19 @@ if __name__ == "__main__":
         valid_dataset, batch_size=batch_size, num_workers=2
     )
 
+    '''ini the model'''
     device = torch.device("cuda")
     model = CustomModel(num_tag=p_data.num_tag, num_pos=p_data.num_pos)
+    '''allocating tensors inside gpu'''
     model.to(device)
+    '''ini the optimizer'''
 
     param_optimizer = list(model.named_parameters())
     no_decay = ["bias", "LayerNorm.bias", "LayerNorm.weight"]
     #a = [ n for n, p in param_optimizer if not any(nd in n for nd in no_decay)]
     #b = [n for n, p in param_optimizer if  any(nd in n for nd in no_decay)]
+
+    '''applying regularization to specific parameters only'''
     optimizer_parameters = [
         {
             "params": [

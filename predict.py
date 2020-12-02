@@ -10,7 +10,7 @@ from model import CustomModel
 
 
 if __name__ == "__main__":
-
+    '''fetching pos_encoder and tag_encoder tokens'''
     meta_data = joblib.load("meta.bin")
     enc_pos = meta_data["enc_pos"]
     enc_tag = meta_data["enc_tag"]
@@ -18,6 +18,7 @@ if __name__ == "__main__":
     num_pos = len(list(enc_pos.classes_))
     num_tag = len(list(enc_tag.classes_))
 
+    '''preprocessing the data'''
     sentence = "i live in india"
     tokenized_sentence = fetch_data.TOKENIZER.encode(sentence)
 
@@ -30,12 +31,12 @@ if __name__ == "__main__":
         pos=[[0] * len(sentence)],
         tags=[[0] * len(sentence)]
     )
-
+    '''ini the model'''
     device = torch.device("cuda")
     model = CustomModel(num_tag=num_tag, num_pos=num_pos)
     model.load_state_dict(torch.load(fetch_data.MODEL_PATH))
     model.to(device)
-
+    '''prediction'''
     with torch.no_grad():
         data = test_dataset[0]
         for k, v in data.items():
