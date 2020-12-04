@@ -8,11 +8,11 @@ step to use this project:
 &nbsp;&nbsp;&nbsp;-wait, you should wait more, or check if model.bin is created inside your project director?  
 &nbsp;&nbsp;&nbsp;-if yes, you can stope training the model with the cost of accuracy.   
 4)now go and run predict.py. 
-
+</pre>
 
 how to understand every output tag in ner model?
-visit the link below
+visit the link ->
 https://spacy.io/api/annotation
 
 
-source of reference = https://github.com/abhishekkrthakur/bert-entity-extraction
+source of reference -> https://github.com/abhishekkrthakur/bert-entity-extraction
