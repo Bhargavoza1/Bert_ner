@@ -66,8 +66,8 @@ if __name__ == "__main__":
     model = CustomModel(num_tag=p_data.num_tag, num_pos=p_data.num_pos)
     '''allocating tensors inside gpu'''
     model.to(device)
-    '''ini the optimizer'''
 
+    '''ini the optimizer'''
     param_optimizer = list(model.named_parameters())
     no_decay = ["bias", "LayerNorm.bias", "LayerNorm.weight"]
     #a = [ n for n, p in param_optimizer if not any(nd in n for nd in no_decay)]
